@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import pino from 'pino-http';
 import { env } from './utils/env.js';
+import contactsRouter from './routes/contacts.js';
 
 export const startServer = () => {
     const app = express();
@@ -20,6 +21,11 @@ export const startServer = () => {
 
     // Використовуємо cors
     app.use(cors());
+
+    app.use(express.json());  // Додаємо middleware для роботи з JSON
+
+    // Реєструємо маршрут для контактів
+    app.use('/contacts', contactsRouter);
 
     // Основний роут
     app.get('/', (req, res) => {
