@@ -34,8 +34,32 @@ export const createContact = async (contactData) => {
     }
 };
 
+export const updateContact = async (contactId, contactData) => {
+    try {
+        const updatedContact = await Contact.findByIdAndUpdate(contactId, contactData, {
+            new: true,
+            runValidators: true,
+        });
+
+        // Перевірка, чи було оновлено контакт
+        if (!updatedContact) {
+            throw new Error('Contact not found');
+        }
+
+        return updatedContact;
+    } catch (error) {
+        // Додайте обробку помилок для некоректного ID
+        if (error.name === 'CastError') {
+            throw new Error('Invalid contact ID');
+        }
+        throw new Error('Error updating contact: ' + error.message);
+    }
+};
+
+
 export default {
     getAllContacts,
     getContactById,
     createContact,
+    updateContact,
 };

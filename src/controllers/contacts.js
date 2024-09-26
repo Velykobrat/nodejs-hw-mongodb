@@ -2,10 +2,20 @@
 import createError from 'http-errors';
 import contactsService from '../services/contacts.js';
 
+// Контролер для отримання всіх контактів
+export const getContacts = async (req, res, next) => {
+    try {
+        const contacts = await contactsService.getAllContacts();
+        res.json(contacts);
+    } catch (error) {
+        next(createError(500, error.message));
+    }
+};
+
+// Контролер для створення нового контакту
 export const createContact = async (req, res, next) => {
     const { name, phoneNumber, email, isFavourite, contactType } = req.body;
 
-    // Перевірка обов'язкових полів
     if (!name || !phoneNumber || !contactType) {
         return next(createError(400, 'Missing required fields: name, phoneNumber, or contactType'));
     }
@@ -25,36 +35,56 @@ export const createContact = async (req, res, next) => {
             data: newContact,
         });
     } catch (error) {
-        console.error('Error creating contact:', error); // Додайте це логування
-        next(createError(500, error.message)); // Обробка помилки
+        next(createError(500, error.message));
     }
 };
 
-
-// Сервіс для отримання всіх контактів
-export const getContacts = async (req, res, next) => {
+// Контролер для отримання контакту за ID
+export const getContactById = async (req, res, next) => {
+    const { contactId } = req.params;
     try {
-        const contacts = await contactsService.getAllContacts();
-        res.status(200).json({
-            status: 200,
-            data: contacts,
-        });
+        const contact = await contactsService.getContactById(contactId);
+        if (!contact) {
+            return next(createError(404, 'Contact not found'));
+        }
+        res.json(contact);
     } catch (error) {
         next(createError(500, error.message));
     }
 };
 
-// Сервіс для отримання контакту за ID
-export const getContactById = async (req, res, next) => {
+// Контролер для оновлення існуючого контакту
+export const updateContact = async (req, res, next) => {
     const { contactId } = req.params;
+    const { name, phoneNumber, email, isFavourite, contactType } = req.body;
 
     try {
-        const contact = await contactsService.getContactById(contactId);
+        // Спробуйте знайти та оновити контакт
+        const updatedContact = await contactsService.updateContact(contactId, {
+            name,
+            phoneNumber,
+            email,
+            isFavourite,
+            contactType,
+        });
+
+        // Перевірте, чи контакт знайдено
+        if (!updatedContact) {
+            return next(createError(404, 'Contact not found'));
+        }
+
         res.status(200).json({
             status: 200,
-            data: contact,
+            message: "Successfully patched a contact!",
+            data: updatedContact,
         });
     } catch (error) {
+        // Логування помилки для відладки
+        console.error("Error updating contact:", error);
+        // Перевірка на помилку через неправильний формат ID
+        if (error.name === 'CastError') {
+            return next(createError(400, 'Invalid contact ID'));
+        }
         next(createError(500, error.message));
     }
 };
