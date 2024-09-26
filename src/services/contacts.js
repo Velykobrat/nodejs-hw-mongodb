@@ -56,10 +56,22 @@ export const updateContact = async (contactId, contactData) => {
     }
 };
 
+// Сервіс для видалення контакту
+export const deleteContact = async (contactId) => {
+    try {
+        const deletedContact = await Contact.findByIdAndDelete(contactId); // Видаляємо контакт за ID
+        return deletedContact; // Повертаємо видалений контакт або null, якщо не знайдено
+    } catch (error) {
+        throw new Error('Error deleting contact: ' + error.message);
+    }
+};
 
+// Додайте видалення у експорт
 export default {
     getAllContacts,
     getContactById,
     createContact,
     updateContact,
+    deleteContact,
 };
+

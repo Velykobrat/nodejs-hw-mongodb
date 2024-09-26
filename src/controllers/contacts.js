@@ -88,3 +88,19 @@ export const updateContact = async (req, res, next) => {
         next(createError(500, error.message));
     }
 };
+
+// Контролер для видалення контакту
+export const deleteContact = async (req, res, next) => {
+    const { contactId } = req.params;
+
+    try {
+        const deletedContact = await contactsService.deleteContact(contactId);
+        if (!deletedContact) {
+            return next(createError(404, 'Contact not found'));
+        }
+
+        res.status(204).send(); // Відповідь без тіла
+    } catch (error) {
+        next(createError(500, error.message));
+    }
+};
