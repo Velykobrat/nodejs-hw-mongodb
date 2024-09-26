@@ -59,7 +59,6 @@ export const updateContact = async (req, res, next) => {
     const { name, phoneNumber, email, isFavourite, contactType } = req.body;
 
     try {
-        // Спробуйте знайти та оновити контакт
         const updatedContact = await contactsService.updateContact(contactId, {
             name,
             phoneNumber,
@@ -68,7 +67,6 @@ export const updateContact = async (req, res, next) => {
             contactType,
         });
 
-        // Перевірте, чи контакт знайдено
         if (!updatedContact) {
             return next(createError(404, 'Contact not found'));
         }

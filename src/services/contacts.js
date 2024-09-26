@@ -48,7 +48,7 @@ export const updateContact = async (contactId, contactData) => {
 
         return updatedContact;
     } catch (error) {
-        // Додайте обробку помилок для некоректного ID
+        // Обробка помилок для некоректного ID
         if (error.name === 'CastError') {
             throw new Error('Invalid contact ID');
         }
@@ -66,7 +66,6 @@ export const deleteContact = async (contactId) => {
     }
 };
 
-// Додайте видалення у експорт
 export default {
     getAllContacts,
     getContactById,
