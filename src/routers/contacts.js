@@ -1,15 +1,17 @@
 // src/routers/contacts.js
 import express from 'express';
-import { getContacts, addContact } from '../controllers/contacts.js';
+import { getContacts, createContact, getContactById } from '../controllers/contacts.js';
+import ctrlWrapper from '../utils/ctrlWrapper.js';
 
 const router = express.Router();
 
 // Роут для отримання контактів
-router.get('/', getContacts);
+router.get('/', ctrlWrapper(getContacts));
 
-// Роут для додавання нового контакту
-router.post('/', addContact);
+// Роут для отримання контакту за ID
+router.get('/:contactId', ctrlWrapper(getContactById));
 
-// Додайте інші маршрути за необхідності
+// Роут для створення нового контакту
+router.post('/', ctrlWrapper(createContact));
 
 export default router;
