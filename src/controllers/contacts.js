@@ -6,11 +6,16 @@ import contactsService from '../services/contacts.js';
 export const getContacts = async (req, res, next) => {
     try {
         const contacts = await contactsService.getAllContacts();
-        res.json(contacts);
+        res.status(200).json({
+            status: 200,
+            message: "Contacts retrieved successfully",
+            data: contacts,
+        });
     } catch (error) {
         next(createError(500, error.message));
     }
 };
+
 
 // Контролер для створення нового контакту
 export const createContact = async (req, res, next) => {
@@ -47,11 +52,16 @@ export const getContactById = async (req, res, next) => {
         if (!contact) {
             return next(createError(404, 'Contact not found'));
         }
-        res.json(contact);
+        res.status(200).json({
+            status: 200,
+            message: "Contact retrieved successfully",
+            data: contact,
+        });
     } catch (error) {
         next(createError(500, error.message));
     }
 };
+
 
 // Контролер для оновлення існуючого контакту
 export const updateContact = async (req, res, next) => {
