@@ -10,16 +10,17 @@ export const countContacts = async () => {
     }
 };
 
-// Отримання контактів з урахуванням пагінації
-export const getContactsByPage = async (page, perPage) => {
+// Отримання контактів з урахуванням пагінації та сортування
+export const getContactsByPage = async (page, perPage, sortBy, sortOrder) => {
     try {
         const skip = (page - 1) * perPage;
-        return await Contact.find().skip(skip).limit(perPage);
+        const sortOptions = { [sortBy]: sortOrder === 'asc' ? 1 : -1 }; // Визначаємо порядок сортування
+
+        return await Contact.find().sort(sortOptions).skip(skip).limit(perPage);
     } catch (error) {
         throw new Error('Error retrieving contacts');
     }
 };
-
 // Сервіс для отримання всіх контактів
 export const getAllContacts = async () => {
     try {

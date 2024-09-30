@@ -3,11 +3,18 @@ import createError from 'http-errors';
 import contactsService from '../services/contacts.js';
 
 // Контролер для отримання всіх контактів
-
 export const getContacts = async (req, res, next) => {
-    const { page = 1, perPage = 10 } = req.query; // Отримання значень з query параметрів
+    const { page = 1, perPage = 10, sortBy = 'name', sortOrder = 'asc' } = req.query; // Отримання значень з query параметрів
     const pageNumber = parseInt(page);
     const itemsPerPage = parseInt(perPage);
+
+    // Перевірка на валідність параметрів сортування
+    if (!['name', 'phoneNumber', 'email'].includes(sortBy)) {
+        return next(createError(400, 'Invalid sortBy parameter'));
+    }
+    if (!['asc', 'desc'].includes(sortOrder)) {
+        return next(createError(400, 'Invalid sortOrder parameter'));
+    }
 
     try {
         // Загальна кількість контактів
@@ -16,8 +23,8 @@ export const getContacts = async (req, res, next) => {
         // Розрахунок кількості сторінок
         const totalPages = Math.ceil(totalItems / itemsPerPage);
 
-        // Пошук контактів для поточної сторінки
-        const contacts = await contactsService.getContactsByPage(pageNumber, itemsPerPage);
+        // Пошук контактів для поточної сторінки з сортуванням
+        const contacts = await contactsService.getContactsByPage(pageNumber, itemsPerPage, sortBy, sortOrder);
 
         res.status(200).json({
             status: 200,
@@ -36,8 +43,6 @@ export const getContacts = async (req, res, next) => {
         next(createError(500, error.message));
     }
 };
-
-
 
 // Контролер для створення нового контакту
 export const createContact = async (req, res, next) => {
