@@ -3,18 +3,40 @@ import createError from 'http-errors';
 import contactsService from '../services/contacts.js';
 
 // Контролер для отримання всіх контактів
+
 export const getContacts = async (req, res, next) => {
+    const { page = 1, perPage = 10 } = req.query; // Отримання значень з query параметрів
+    const pageNumber = parseInt(page);
+    const itemsPerPage = parseInt(perPage);
+
     try {
-        const contacts = await contactsService.getAllContacts();
+        // Загальна кількість контактів
+        const totalItems = await contactsService.countContacts();
+
+        // Розрахунок кількості сторінок
+        const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+        // Пошук контактів для поточної сторінки
+        const contacts = await contactsService.getContactsByPage(pageNumber, itemsPerPage);
+
         res.status(200).json({
             status: 200,
-            message: "Contacts retrieved successfully",
-            data: contacts,
+            message: "Successfully found contacts!",
+            data: {
+                data: contacts,
+                page: pageNumber,
+                perPage: itemsPerPage,
+                totalItems,
+                totalPages,
+                hasPreviousPage: pageNumber > 1,
+                hasNextPage: pageNumber < totalPages,
+            },
         });
     } catch (error) {
         next(createError(500, error.message));
     }
 };
+
 
 
 // Контролер для створення нового контакту
