@@ -1,26 +1,30 @@
 // src/services/contacts.js
 import Contact from '../db/models/contact.js';
 
-// Підрахунок загальної кількості контактів
-export const countContacts = async () => {
+// Підрахунок загальної кількості контактів з урахуванням фільтрації
+export const countContacts = async (filter = {}) => {
     try {
-        return await Contact.countDocuments();
+        return await Contact.countDocuments(filter); // Додаємо фільтр для підрахунку
     } catch (error) {
         throw new Error('Error counting contacts');
     }
 };
 
-// Отримання контактів з урахуванням пагінації та сортування
-export const getContactsByPage = async (page, perPage, sortBy, sortOrder) => {
+// Отримання контактів з урахуванням пагінації, сортування та фільтрації
+export const getContactsByPage = async (page, perPage, sortBy, sortOrder, filter = {}) => {
     try {
         const skip = (page - 1) * perPage;
         const sortOptions = { [sortBy]: sortOrder === 'asc' ? 1 : -1 }; // Визначаємо порядок сортування
 
-        return await Contact.find().sort(sortOptions).skip(skip).limit(perPage);
+        return await Contact.find(filter) // Додаємо фільтр до запиту
+            .sort(sortOptions)
+            .skip(skip)
+            .limit(perPage);
     } catch (error) {
         throw new Error('Error retrieving contacts');
     }
 };
+
 // Сервіс для отримання всіх контактів
 export const getAllContacts = async () => {
     try {

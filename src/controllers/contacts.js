@@ -4,7 +4,7 @@ import contactsService from '../services/contacts.js';
 
 // Контролер для отримання всіх контактів
 export const getContacts = async (req, res, next) => {
-    const { page = 1, perPage = 10, sortBy = 'name', sortOrder = 'asc' } = req.query; // Отримання значень з query параметрів
+    const { page = 1, perPage = 10, sortBy = 'name', sortOrder = 'asc', type, isFavourite } = req.query; // Отримання значень з query параметрів
     const pageNumber = parseInt(page);
     const itemsPerPage = parseInt(perPage);
 
@@ -16,15 +16,24 @@ export const getContacts = async (req, res, next) => {
         return next(createError(400, 'Invalid sortOrder parameter'));
     }
 
+    // Підготовка об'єкта для фільтрації
+    const filter = {};
+    if (type) {
+        filter.contactType = type; // Додаємо фільтр за типом контакту
+    }
+    if (isFavourite !== undefined) {
+        filter.isFavourite = isFavourite === 'true'; // Конвертуємо рядок в булеве значення
+    }
+
     try {
         // Загальна кількість контактів
-        const totalItems = await contactsService.countContacts();
+        const totalItems = await contactsService.countContacts(filter);
 
         // Розрахунок кількості сторінок
         const totalPages = Math.ceil(totalItems / itemsPerPage);
 
-        // Пошук контактів для поточної сторінки з сортуванням
-        const contacts = await contactsService.getContactsByPage(pageNumber, itemsPerPage, sortBy, sortOrder);
+        // Пошук контактів для поточної сторінки з сортуванням і фільтрацією
+        const contacts = await contactsService.getContactsByPage(pageNumber, itemsPerPage, sortBy, sortOrder, filter);
 
         res.status(200).json({
             status: 200,
