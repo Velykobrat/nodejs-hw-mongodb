@@ -1,12 +1,17 @@
 // src/routers/contacts.js
+
 import express from 'express';
 import { getContacts, createContact, getContactById, updateContact, deleteContact } from '../controllers/contacts.js';
 import { validateBody } from '../middlewares/validateBody.js';
 import { isValidId } from '../middlewares/isValidId.js';
 import { createContactSchema, updateContactSchema } from '../validation/contactSchemas.js';
 import ctrlWrapper from '../utils/ctrlWrapper.js';
+import authenticate from '../middlewares/authenticate.js'; // Імпортуємо middleware authenticate
 
 const router = express.Router();
+
+// Застосування middleware authenticate до всіх роутів контактів
+router.use(authenticate);
 
 // Роут для отримання контактів
 router.get('/', ctrlWrapper(getContacts));
