@@ -1,7 +1,7 @@
 // src/controllers/auth.js
 
 const createHttpError = require('http-errors');
-const { registerUser } = require('../services/auth');
+const { registerUser, loginUser } = require('../services/auth');
 
 // Контролер для обробки POST /auth/register
 const register = async (req, res, next) => {
@@ -30,6 +30,40 @@ const register = async (req, res, next) => {
   }
 };
 
+// Контролер для обробки POST /auth/login
+const login = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+
+    // Валідація отриманих даних
+    if (!email || !password) {
+      throw createHttpError(400, 'All fields are required');
+    }
+
+    // Виклик сервісу для аутентифікації користувача
+    const { accessToken, refreshToken } = await loginUser(email, password);
+
+    // Встановлення рефреш токена в cookies
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 днів
+    });
+
+    // Відповідь з access токеном
+    res.status(200).json({
+      status: 200,
+      message: 'Successfully logged in an user!',
+      data: {
+        accessToken,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   register,
+  login,
 };
+
