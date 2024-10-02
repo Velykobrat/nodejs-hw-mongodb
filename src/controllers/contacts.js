@@ -2,13 +2,40 @@
 import createError from 'http-errors';
 import contactsService from '../services/contacts.js';
 
+// Контролер для створення нового контакту
+export const createContact = async (req, res, next) => {
+    const { name, phoneNumber, email, isFavourite, contactType } = req.body;
+
+    if (!name || !phoneNumber || !contactType) {
+        return next(createError(400, 'Missing required fields: name, phoneNumber, or contactType'));
+    }
+
+    try {
+        const newContact = await contactsService.createContact({
+            name,
+            phoneNumber,
+            email,
+            isFavourite,
+            contactType,
+            userId: req.user._id, // Додаємо userId
+        });
+
+        res.status(201).json({
+            status: 201,
+            message: "Successfully created a contact!",
+            data: newContact,
+        });
+    } catch (error) {
+        next(createError(500, error.message));
+    }
+};
+
 // Контролер для отримання всіх контактів
 export const getContacts = async (req, res, next) => {
-    const { page = 1, perPage = 10, sortBy = 'name', sortOrder = 'asc', type, isFavourite } = req.query; // Отримання значень з query параметрів
+    const { page = 1, perPage = 10, sortBy = 'name', sortOrder = 'asc', type, isFavourite } = req.query;
     const pageNumber = parseInt(page);
     const itemsPerPage = parseInt(perPage);
 
-    // Перевірка на валідність параметрів сортування
     if (!['name', 'phoneNumber', 'email'].includes(sortBy)) {
         return next(createError(400, 'Invalid sortBy parameter'));
     }
@@ -16,23 +43,17 @@ export const getContacts = async (req, res, next) => {
         return next(createError(400, 'Invalid sortOrder parameter'));
     }
 
-    // Підготовка об'єкта для фільтрації
-    const filter = {};
+    const filter = { userId: req.user._id }; // Додаємо фільтр за userId
     if (type) {
-        filter.contactType = type; // Додаємо фільтр за типом контакту
+        filter.contactType = type;
     }
     if (isFavourite !== undefined) {
-        filter.isFavourite = isFavourite === 'true'; // Конвертуємо рядок в булеве значення
+        filter.isFavourite = isFavourite === 'true';
     }
 
     try {
-        // Загальна кількість контактів
         const totalItems = await contactsService.countContacts(filter);
-
-        // Розрахунок кількості сторінок
         const totalPages = Math.ceil(totalItems / itemsPerPage);
-
-        // Пошук контактів для поточної сторінки з сортуванням і фільтрацією
         const contacts = await contactsService.getContactsByPage(pageNumber, itemsPerPage, sortBy, sortOrder, filter);
 
         res.status(200).json({
@@ -53,38 +74,11 @@ export const getContacts = async (req, res, next) => {
     }
 };
 
-// Контролер для створення нового контакту
-export const createContact = async (req, res, next) => {
-    const { name, phoneNumber, email, isFavourite, contactType } = req.body;
-
-    if (!name || !phoneNumber || !contactType) {
-        return next(createError(400, 'Missing required fields: name, phoneNumber, or contactType'));
-    }
-
-    try {
-        const newContact = await contactsService.createContact({
-            name,
-            phoneNumber,
-            email,
-            isFavourite,
-            contactType,
-        });
-
-        res.status(201).json({
-            status: 201,
-            message: "Successfully created a contact!",
-            data: newContact,
-        });
-    } catch (error) {
-        next(createError(500, error.message));
-    }
-};
-
 // Контролер для отримання контакту за ID
 export const getContactById = async (req, res, next) => {
     const { contactId } = req.params;
     try {
-        const contact = await contactsService.getContactById(contactId);
+        const contact = await contactsService.getContactById(contactId, req.user._id); // Передаємо userId
         if (!contact) {
             return next(createError(404, 'Contact not found'));
         }
@@ -98,7 +92,6 @@ export const getContactById = async (req, res, next) => {
     }
 };
 
-
 // Контролер для оновлення існуючого контакту
 export const updateContact = async (req, res, next) => {
     const { contactId } = req.params;
@@ -111,6 +104,7 @@ export const updateContact = async (req, res, next) => {
             email,
             isFavourite,
             contactType,
+            userId: req.user._id, // Додаємо userId
         });
 
         if (!updatedContact) {
@@ -123,9 +117,7 @@ export const updateContact = async (req, res, next) => {
             data: updatedContact,
         });
     } catch (error) {
-        // Логування помилки для відладки
         console.error("Error updating contact:", error);
-        // Перевірка на помилку через неправильний формат ID
         if (error.name === 'CastError') {
             return next(createError(400, 'Invalid contact ID'));
         }
@@ -138,7 +130,7 @@ export const deleteContact = async (req, res, next) => {
     const { contactId } = req.params;
 
     try {
-        const deletedContact = await contactsService.deleteContact(contactId);
+        const deletedContact = await contactsService.deleteContact(contactId, req.user._id); // Передаємо userId
         if (!deletedContact) {
             return next(createError(404, 'Contact not found'));
         }

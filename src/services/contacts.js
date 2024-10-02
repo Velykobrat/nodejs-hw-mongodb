@@ -6,7 +6,7 @@ export const countContacts = async (filter = {}) => {
     try {
         return await Contact.countDocuments(filter); // Додаємо фільтр для підрахунку
     } catch (error) {
-        throw new Error('Error counting contacts');
+        throw new Error('Error counting contacts: ' + error.message); // Додаємо повідомлення про помилку
     }
 };
 
@@ -21,7 +21,7 @@ export const getContactsByPage = async (page, perPage, sortBy, sortOrder, filter
             .skip(skip)
             .limit(perPage);
     } catch (error) {
-        throw new Error('Error retrieving contacts');
+        throw new Error('Error retrieving contacts: ' + error.message); // Додаємо повідомлення про помилку
     }
 };
 
@@ -31,7 +31,7 @@ export const getAllContacts = async () => {
         const contacts = await Contact.find(); // Отримуємо всі контакти
         return contacts;
     } catch (error) {
-        throw new Error('Error retrieving contacts');
+        throw new Error('Error retrieving contacts: ' + error.message); // Додаємо повідомлення про помилку
     }
 };
 
@@ -40,11 +40,11 @@ export const getContactById = async (contactId) => {
     try {
         const contact = await Contact.findById(contactId); // Шукаємо контакт за ID
         if (!contact) {
-            throw new Error('Contact not found');
+            throw new Error('Contact not found'); // Помилка, якщо контакт не знайдено
         }
         return contact;
     } catch (error) {
-        throw new Error('Error retrieving contact');
+        throw new Error('Error retrieving contact: ' + error.message); // Додаємо повідомлення про помилку
     }
 };
 
@@ -58,6 +58,7 @@ export const createContact = async (contactData) => {
     }
 };
 
+// Сервіс для оновлення існуючого контакту
 export const updateContact = async (contactId, contactData) => {
     try {
         const updatedContact = await Contact.findByIdAndUpdate(contactId, contactData, {
@@ -67,7 +68,7 @@ export const updateContact = async (contactId, contactData) => {
 
         // Перевірка, чи було оновлено контакт
         if (!updatedContact) {
-            throw new Error('Contact not found');
+            throw new Error('Contact not found'); // Помилка, якщо контакт не знайдено
         }
 
         return updatedContact;
@@ -76,7 +77,7 @@ export const updateContact = async (contactId, contactData) => {
         if (error.name === 'CastError') {
             throw new Error('Invalid contact ID');
         }
-        throw new Error('Error updating contact: ' + error.message);
+        throw new Error('Error updating contact: ' + error.message); // Додаємо повідомлення про помилку
     }
 };
 
@@ -86,7 +87,7 @@ export const deleteContact = async (contactId) => {
         const deletedContact = await Contact.findByIdAndDelete(contactId); // Видаляємо контакт за ID
         return deletedContact; // Повертаємо видалений контакт або null, якщо не знайдено
     } catch (error) {
-        throw new Error('Error deleting contact: ' + error.message);
+        throw new Error('Error deleting contact: ' + error.message); // Додаємо повідомлення про помилку
     }
 };
 
@@ -99,4 +100,3 @@ export default {
     countContacts,
     getContactsByPage,
 };
-
