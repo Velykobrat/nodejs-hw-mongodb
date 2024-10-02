@@ -1,7 +1,7 @@
 // src/controllers/auth.js
 
 const createHttpError = require('http-errors');
-const { registerUser, loginUser } = require('../services/auth');
+const { registerUser, loginUser, refreshSession, logoutUser } = require('../services/auth');
 
 // Контролер для обробки POST /auth/register
 const register = async (req, res, next) => {
@@ -87,8 +87,31 @@ const refresh = async (req, res, next) => {
   }
 };
 
+// Контролер для обробки POST /auth/logout
+const logout = async (req, res, next) => {
+  try {
+    const { refreshToken } = req.cookies;
+
+    if (!refreshToken) {
+      throw createHttpError(400, 'Refresh token is required');
+    }
+
+    // Видалення сесії за рефреш токеном
+    await logoutUser(refreshToken);
+
+    // Видалення рефреш токена з cookies
+    res.clearCookie('refreshToken');
+
+    // Відповідь з кодом 204 (немає вмісту)
+    res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   register,
   login,
   refresh,
+  logout,
 };

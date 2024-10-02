@@ -111,8 +111,24 @@ const refreshSession = async (refreshToken) => {
   return { newAccessToken, newRefreshToken };
 };
 
+// Функція для видалення сесії (логаут користувача)
+const logoutUser = async (refreshToken) => {
+  if (!refreshToken) {
+    throw createHttpError(400, 'Refresh token is required');
+  }
+
+  // Видалення сесії за рефреш токеном
+  const session = await Session.findOneAndDelete({ refreshToken });
+  if (!session) {
+    throw createHttpError(404, 'Session not found');
+  }
+
+  return true;
+};
+
 module.exports = {
   registerUser,
   loginUser,
   refreshSession,
+  logoutUser,
 };
