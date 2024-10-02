@@ -62,8 +62,33 @@ const login = async (req, res, next) => {
   }
 };
 
+// Контролер для обробки POST /auth/refresh
+const refresh = async (req, res, next) => {
+  try {
+    const { refreshToken } = req.cookies;
+    const { newAccessToken, newRefreshToken } = await refreshSession(refreshToken);
+
+    // Оновлення рефреш токена в cookies
+    res.cookie('refreshToken', newRefreshToken, {
+      httpOnly: true,
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 днів
+    });
+
+    // Відповідь з новим access токеном
+    res.status(200).json({
+      status: 200,
+      message: 'Successfully refreshed a session!',
+      data: {
+        accessToken: newAccessToken,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   register,
   login,
+  refresh,
 };
-

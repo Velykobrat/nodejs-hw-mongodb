@@ -69,7 +69,50 @@ const loginUser = async (email, password) => {
   return { accessToken, refreshToken };
 };
 
+// Функція для оновлення сесії на основі рефреш токена
+const refreshSession = async (refreshToken) => {
+  if (!refreshToken) {
+    throw createHttpError(400, 'Refresh token is required');
+  }
+
+  let payload;
+  try {
+    payload = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+  } catch (error) {
+    throw createHttpError(401, 'Invalid refresh token');
+  }
+
+  const session = await Session.findOne({ refreshToken });
+  if (!session) {
+    throw createHttpError(401, 'Session not found');
+  }
+
+  const user = await User.findById(payload.userId);
+  if (!user) {
+    throw createHttpError(401, 'User not found');
+  }
+
+  // Видалення старої сесії
+  await Session.deleteOne({ userId: user._id });
+
+  // Генерація нових токенів
+  const newAccessToken = jwt.sign({ userId: user._id }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
+  const newRefreshToken = jwt.sign({ userId: user._id }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '30d' });
+
+  const newSession = new Session({
+    userId: user._id,
+    accessToken: newAccessToken,
+    refreshToken: newRefreshToken,
+    accessTokenValidUntil: new Date(Date.now() + 15 * 60 * 1000),
+    refreshTokenValidUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+  });
+  await newSession.save();
+
+  return { newAccessToken, newRefreshToken };
+};
+
 module.exports = {
   registerUser,
   loginUser,
+  refreshSession,
 };
