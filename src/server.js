@@ -8,6 +8,7 @@ import contactsRouter from './routers/contacts.js'; // Імпортуємо ро
 import authRouter from './routers/auth.js'; // Імпортуємо роутер для автентифікації.
 import errorHandler from './middlewares/errorHandler.js'; // Імпортуємо обробник помилок.
 import notFoundHandler from './middlewares/notFoundHandler.js'; // Імпортуємо обробник неіснуючих маршрутів.
+import cookieParser from 'cookie-parser'; // Імпортуємо cookie-parser
 
 // Оголошуємо функцію для запуску сервера.
 export const startServer = () => {
@@ -29,6 +30,8 @@ export const startServer = () => {
     app.use(cors());
     // Додаємо middleware для парсингу JSON в запитах.
     app.use(express.json());
+        // Додаємо middleware для обробки кукі
+    app.use(cookieParser());
 
     // Налаштовуємо маршрути:
     app.use('/contacts', contactsRouter); // Всі запити на '/contacts' обробляються contactsRouter.
