@@ -1,13 +1,13 @@
 // src/services/auth.js
 
-const bcrypt = require('bcrypt');
-const createHttpError = require('http-errors');
-const User = require('../db/models/user');
-const jwt = require('jsonwebtoken');
-const Session = require('../db/models/session');
+import bcrypt from 'bcrypt';
+import createHttpError from 'http-errors';
+import User from '../db/models/user.js';
+import jwt from 'jsonwebtoken';
+import Session from '../db/models/session.js';
 
 // Функція для реєстрації користувача
-const registerUser = async (name, email, password) => {
+export const registerUser = async (name, email, password) => {
   // Перевірка, чи існує користувач із таким email
   const existingUser = await User.findOne({ email });
   if (existingUser) {
@@ -32,7 +32,7 @@ const registerUser = async (name, email, password) => {
 };
 
 // Функція для аутентифікації користувача
-const loginUser = async (email, password) => {
+export const loginUser = async (email, password) => {
   // Перевірка, чи існує користувач
   const user = await User.findOne({ email });
   if (!user) {
@@ -70,7 +70,7 @@ const loginUser = async (email, password) => {
 };
 
 // Функція для оновлення сесії на основі рефреш токена
-const refreshSession = async (refreshToken) => {
+export const refreshSession = async (refreshToken) => {
   if (!refreshToken) {
     throw createHttpError(400, 'Refresh token is required');
   }
@@ -112,7 +112,7 @@ const refreshSession = async (refreshToken) => {
 };
 
 // Функція для видалення сесії (логаут користувача)
-const logoutUser = async (refreshToken) => {
+export const logoutUser = async (refreshToken) => {
   if (!refreshToken) {
     throw createHttpError(400, 'Refresh token is required');
   }
@@ -124,11 +124,4 @@ const logoutUser = async (refreshToken) => {
   }
 
   return true;
-};
-
-module.exports = {
-  registerUser,
-  loginUser,
-  refreshSession,
-  logoutUser,
 };

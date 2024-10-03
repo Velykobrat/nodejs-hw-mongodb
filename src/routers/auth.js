@@ -1,8 +1,9 @@
 // src/routers/auth.js
 
-const express = require('express');
+import express from 'express';
+import { register, login, refresh, logout } from '../controllers/auth.js';
+
 const router = express.Router();
-const { register, login, refresh, logout } = require('../controllers/auth');
 
 // Роут для реєстрації
 router.post('/register', register);
@@ -16,6 +17,4 @@ router.post('/refresh', refresh);
 // Роут для логауту
 router.post('/logout', logout);
 
-module.exports = router;
-
-
+export default router;

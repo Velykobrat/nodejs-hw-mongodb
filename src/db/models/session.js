@@ -1,5 +1,9 @@
 // src/db/models/session.js
 
+import mongoose from 'mongoose';
+
+const { Schema } = mongoose;
+
 const sessionSchema = new Schema(
   {
     userId: {
@@ -29,4 +33,5 @@ const sessionSchema = new Schema(
 
 const Session = mongoose.model('Session', sessionSchema);
 
-module.exports = Session;
+export default Session;
+

@@ -1,10 +1,10 @@
 // src/controllers/auth.js
 
-const createHttpError = require('http-errors');
-const { registerUser, loginUser, refreshSession, logoutUser } = require('../services/auth');
+import createHttpError from 'http-errors';
+import { registerUser, loginUser, refreshSession, logoutUser } from '../services/auth.js';
 
 // Контролер для обробки POST /auth/register
-const register = async (req, res, next) => {
+export const register = async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
 
@@ -31,7 +31,7 @@ const register = async (req, res, next) => {
 };
 
 // Контролер для обробки POST /auth/login
-const login = async (req, res, next) => {
+export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
@@ -63,7 +63,7 @@ const login = async (req, res, next) => {
 };
 
 // Контролер для обробки POST /auth/refresh
-const refresh = async (req, res, next) => {
+export const refresh = async (req, res, next) => {
   try {
     const { refreshToken } = req.cookies;
     const { newAccessToken, newRefreshToken } = await refreshSession(refreshToken);
@@ -88,7 +88,7 @@ const refresh = async (req, res, next) => {
 };
 
 // Контролер для обробки POST /auth/logout
-const logout = async (req, res, next) => {
+export const logout = async (req, res, next) => {
   try {
     const { refreshToken } = req.cookies;
 
@@ -107,11 +107,4 @@ const logout = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-};
-
-module.exports = {
-  register,
-  login,
-  refresh,
-  logout,
 };
