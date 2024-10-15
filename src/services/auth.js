@@ -6,73 +6,59 @@ import User from '../db/models/user.js';
 import jwt from 'jsonwebtoken';
 import Session from '../db/models/session.js';
 
+// Генерація токенів
+const generateTokens = (userId) => {
+  const accessToken = jwt.sign({ userId }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
+  const refreshToken = jwt.sign({ userId }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '30d' });
+
+  return { accessToken, refreshToken };
+};
+
+// Отримання терміну дії токенів
+const getTokenValidityDates = () => {
+  const accessTokenValidUntil = new Date(Date.now() + 15 * 60 * 1000); // 15 хв
+  const refreshTokenValidUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 днів
+
+  return { accessTokenValidUntil, refreshTokenValidUntil };
+};
+
+// Видалення сесії за userId
+const deleteSessionByUserId = async (userId) => {
+  await Session.deleteOne({ userId });
+};
+
 // Функція для реєстрації користувача
 export const registerUser = async (name, email, password) => {
-  // Перевірка, чи існує користувач із таким email
   const existingUser = await User.findOne({ email });
   if (existingUser) {
     throw createHttpError(409, 'Email in use');
   }
 
-  // Хешування пароля
   const hashedPassword = await bcrypt.hash(password, 10);
-
-  // Створення нового користувача
-  const newUser = new User({
-    name,
-    email,
-    password: hashedPassword,
-  });
-
-  // Збереження користувача в базі даних
+  const newUser = new User({ name, email, password: hashedPassword });
   await newUser.save();
 
-  // Повернення даних створеного користувача (без пароля)
   return newUser;
 };
 
 // Функція для аутентифікації користувача
 export const loginUser = async (email, password) => {
-  // Перевірка, чи існує користувач
   const user = await User.findOne({ email });
-  if (!user) {
+  if (!user || !(await bcrypt.compare(password, user.password))) {
     throw createHttpError(401, 'Invalid credentials');
   }
 
-  // Перевірка пароля
-  const isPasswordValid = await bcrypt.compare(password, user.password);
-  if (!isPasswordValid) {
-    throw createHttpError(401, 'Invalid credentials');
-  }
+  const { accessToken, refreshToken } = generateTokens(user._id);
+  await deleteSessionByUserId(user._id);
 
-  // Генерація токенів
-  const accessToken = jwt.sign({ userId: user._id }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
-  const refreshToken = jwt.sign({ userId: user._id }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '30d' });
-  console.log('ACCESS_TOKEN_SECRET:', process.env.ACCESS_TOKEN_SECRET);
-  console.log('REFRESH_TOKEN_SECRET:', process.env.REFRESH_TOKEN_SECRET);
-
-
-  // Видалення старої сесії, якщо вона існує
-  await Session.deleteOne({ userId: user._id });
-
-  // Створення нової сесії
-  const accessTokenValidUntil = new Date(Date.now() + 15 * 60 * 1000); // 15 хв
-  const refreshTokenValidUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 днів
-
-  const newSession = new Session({
-    userId: user._id,
-    accessToken,
-    refreshToken,
-    accessTokenValidUntil,
-    refreshTokenValidUntil,
-  });
-
+  const { accessTokenValidUntil, refreshTokenValidUntil } = getTokenValidityDates();
+  const newSession = new Session({ userId: user._id, accessToken, refreshToken, accessTokenValidUntil, refreshTokenValidUntil });
   await newSession.save();
 
   return { accessToken, refreshToken };
 };
 
-// Функція для оновлення сесії на основі рефреш токена
+// Функція для оновлення сесії
 export const refreshSession = async (refreshToken) => {
   if (!refreshToken) {
     throw createHttpError(400, 'Refresh token is required');
@@ -81,7 +67,7 @@ export const refreshSession = async (refreshToken) => {
   let payload;
   try {
     payload = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
-  } catch (error) {
+  } catch {
     throw createHttpError(401, 'Invalid refresh token');
   }
 
@@ -95,23 +81,14 @@ export const refreshSession = async (refreshToken) => {
     throw createHttpError(401, 'User not found');
   }
 
-  // Видалення старої сесії
-  await Session.deleteOne({ userId: user._id });
+  await deleteSessionByUserId(user._id);
 
-  // Генерація нових токенів
-  const newAccessToken = jwt.sign({ userId: user._id }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
-  const newRefreshToken = jwt.sign({ userId: user._id }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '30d' });
-
-  const newSession = new Session({
-    userId: user._id,
-    accessToken: newAccessToken,
-    refreshToken: newRefreshToken,
-    accessTokenValidUntil: new Date(Date.now() + 15 * 60 * 1000),
-    refreshTokenValidUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-  });
+  const { accessToken, refreshToken: newRefreshToken } = generateTokens(user._id);
+  const { accessTokenValidUntil, refreshTokenValidUntil } = getTokenValidityDates();
+  const newSession = new Session({ userId: user._id, accessToken, refreshToken: newRefreshToken, accessTokenValidUntil, refreshTokenValidUntil });
   await newSession.save();
 
-  return { newAccessToken, newRefreshToken };
+  return { newAccessToken: accessToken, newRefreshToken };
 };
 
 // Функція для видалення сесії (логаут користувача)
@@ -120,7 +97,6 @@ export const logoutUser = async (refreshToken) => {
     throw createHttpError(400, 'Refresh token is required');
   }
 
-  // Видалення сесії за рефреш токеном
   const session = await Session.findOneAndDelete({ refreshToken });
   if (!session) {
     throw createHttpError(404, 'Session not found');
