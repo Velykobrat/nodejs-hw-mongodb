@@ -6,7 +6,7 @@ import { validateBody } from '../middlewares/validateBody.js';
 import { isValidId } from '../middlewares/isValidId.js';
 import { createContactSchema, updateContactSchema } from '../validation/contactSchemas.js';
 import ctrlWrapper from '../utils/ctrlWrapper.js';
-import authenticate from '../middlewares/authenticate.js'; // Імпортуємо middleware authenticate
+import authenticate from '../middlewares/authenticate.js';
 
 const router = express.Router();
 

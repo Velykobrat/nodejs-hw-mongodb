@@ -1,5 +1,5 @@
 // src/middleware/validateBody.js
-import Joi from 'joi';
+
 import createError from 'http-errors';
 
 export const validateBody = (schema) => {

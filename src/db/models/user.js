@@ -1,5 +1,5 @@
 // src/db/models/user.js
-import mongoose from 'mongoose'; // Зміна на import
+import mongoose from 'mongoose';
 const { Schema } = mongoose;
 
 const userSchema = new Schema(
@@ -24,4 +24,4 @@ const userSchema = new Schema(
 
 const User = mongoose.model('User', userSchema);
 
-export default User; 
+export default User;

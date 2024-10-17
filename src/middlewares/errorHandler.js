@@ -5,7 +5,7 @@ const errorHandler = (err, req, res, next) => {
     res.status(status).json({
         status,
         message: "Something went wrong",
-        data: err.message, // Конкретне повідомлення про помилку
+        data: err.message,
     });
 };
 

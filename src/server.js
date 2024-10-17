@@ -9,6 +9,7 @@ import authRouter from './routers/auth.js'; // Імпортуємо роутер
 import errorHandler from './middlewares/errorHandler.js'; // Імпортуємо обробник помилок.
 import notFoundHandler from './middlewares/notFoundHandler.js'; // Імпортуємо обробник неіснуючих маршрутів.
 import cookieParser from 'cookie-parser'; // Імпортуємо cookie-parser
+import axios from 'axios';
 
 // Оголошуємо функцію для запуску сервера.
 export const startServer = () => {
@@ -51,7 +52,15 @@ export const startServer = () => {
     app.use(errorHandler);
 
     // Запускаємо сервер на заданому порті.
-    app.listen(PORT, () => {
+    app.listen(PORT, async () => {
         console.log(`Server is running on port ${PORT}`); // Лог повідомлення про запуск сервера.
+
+        // Приклад запиту до /contacts
+        try {
+            const response = await axios.get(`http://localhost:${PORT}/contacts`);
+            console.log('Contacts data:', response.data);
+        } catch (error) {
+            console.error('Error fetching contacts:', error.message);
+        }
     });
 };

@@ -1,12 +1,13 @@
 // src/services/contacts.js
+
 import Contact from '../db/models/contact.js';
 
 // Підрахунок загальної кількості контактів з урахуванням фільтрації
 export const countContacts = async (filter = {}) => {
     try {
-        return await Contact.countDocuments(filter); // Додаємо фільтр для підрахунку
+        return await Contact.countDocuments(filter);
     } catch (error) {
-        throw new Error('Error counting contacts: ' + error.message); // Додаємо повідомлення про помилку
+        throw new Error('Error counting contacts: ' + error.message);
     }
 };
 
@@ -14,83 +15,92 @@ export const countContacts = async (filter = {}) => {
 export const getContactsByPage = async (page, perPage, sortBy, sortOrder, filter = {}) => {
     try {
         const skip = (page - 1) * perPage;
-        const sortOptions = { [sortBy]: sortOrder === 'asc' ? 1 : -1 }; // Визначаємо порядок сортування
+        const sortOptions = { [sortBy]: sortOrder === 'asc' ? 1 : -1 };
 
-        return await Contact.find(filter) // Додаємо фільтр до запиту
+        return await Contact.find(filter)
             .sort(sortOptions)
             .skip(skip)
             .limit(perPage);
     } catch (error) {
-        throw new Error('Error retrieving contacts: ' + error.message); // Додаємо повідомлення про помилку
+        throw new Error('Error retrieving contacts: ' + error.message);
     }
 };
 
 // Сервіс для отримання всіх контактів
-export const getAllContacts = async () => {
+export const getAllContacts = async (userId) => {
     try {
-        const contacts = await Contact.find(); // Отримуємо всі контакти
+        const contacts = await Contact.find({ userId }); // Фільтрація за userId
         return contacts;
     } catch (error) {
-        throw new Error('Error retrieving contacts: ' + error.message); // Додаємо повідомлення про помилку
+        throw new Error('Error retrieving contacts: ' + error.message);
     }
 };
 
 // Сервіс для отримання контакту за ID
-export const getContactById = async (contactId) => {
+export const getContactById = async (contactId, userId) => {
     try {
-        const contact = await Contact.findById(contactId); // Шукаємо контакт за ID
+        const contact = await Contact.findOne({ _id: contactId, userId }); // Фільтрація за userId
         if (!contact) {
-            throw new Error('Contact not found'); // Помилка, якщо контакт не знайдено
+            throw new Error('Contact not found');
         }
         return contact;
     } catch (error) {
-        throw new Error('Error retrieving contact: ' + error.message); // Додаємо повідомлення про помилку
+        throw new Error('Error retrieving contact: ' + error.message);
     }
 };
 
 // Сервіс для створення нового контакту
 export const createContact = async (contactData) => {
+    console.log('Creating contact with data:', contactData);
+
     try {
-        const newContact = await Contact.create(contactData); // Створюємо новий контакт у базі даних
+        const newContact = await Contact.create(contactData);
+        console.log('Contact created successfully:', newContact);
         return newContact;
     } catch (error) {
-        throw new Error('Error creating contact: ' + error.message); // Включити інформацію про помилку
+        console.error('Error creating contact:', error);
+        throw new Error('Error creating contact: ' + error.message);
     }
 };
 
 // Сервіс для оновлення існуючого контакту
 export const updateContact = async (contactId, contactData) => {
+    console.log('Updating contact with ID:', contactId, 'and data:', contactData);
+
     try {
         const updatedContact = await Contact.findByIdAndUpdate(contactId, contactData, {
             new: true,
             runValidators: true,
         });
 
-        // Перевірка, чи було оновлено контакт
         if (!updatedContact) {
-            throw new Error('Contact not found'); // Помилка, якщо контакт не знайдено
+            throw new Error('Contact not found');
         }
+
+        console.log('Contact updated successfully:', updatedContact);
 
         return updatedContact;
     } catch (error) {
-        // Обробка помилок для некоректного ID
+        console.error('Error updating contact:', error);
+
         if (error.name === 'CastError') {
             throw new Error('Invalid contact ID');
         }
-        throw new Error('Error updating contact: ' + error.message); // Додаємо повідомлення про помилку
+        throw new Error('Error updating contact: ' + error.message);
     }
 };
 
 // Сервіс для видалення контакту
-export const deleteContact = async (contactId) => {
+export const deleteContact = async (contactId, userId) => {
     try {
-        const deletedContact = await Contact.findByIdAndDelete(contactId); // Видаляємо контакт за ID
-        return deletedContact; // Повертаємо видалений контакт або null, якщо не знайдено
+        const deletedContact = await Contact.findOneAndDelete({ _id: contactId, userId }); // Фільтрація за userId
+        return deletedContact;
     } catch (error) {
-        throw new Error('Error deleting contact: ' + error.message); // Додаємо повідомлення про помилку
+        throw new Error('Error deleting contact: ' + error.message);
     }
 };
 
+// Експорт усіх сервісів
 export default {
     getAllContacts,
     getContactById,

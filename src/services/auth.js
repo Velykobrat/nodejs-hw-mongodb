@@ -10,6 +10,8 @@ import Session from '../db/models/session.js';
 const generateTokens = (userId) => {
   const accessToken = jwt.sign({ userId }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
   const refreshToken = jwt.sign({ userId }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '30d' });
+  console.log("Generated Access Token:", accessToken);
+  console.log("Generated Refresh Token:", refreshToken);
 
   return { accessToken, refreshToken };
 };
@@ -67,7 +69,7 @@ export const refreshSession = async (refreshToken) => {
   let payload;
   try {
     payload = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
-  } catch {
+  } catch (err) {
     throw createHttpError(401, 'Invalid refresh token');
   }
 
