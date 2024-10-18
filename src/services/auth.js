@@ -2,16 +2,15 @@
 
 import bcrypt from 'bcrypt';
 import createHttpError from 'http-errors';
-import User from '../db/models/user.js';
 import jwt from 'jsonwebtoken';
+import User from '../db/models/user.js';
 import Session from '../db/models/session.js';
+import { randomBytes } from 'crypto';
 
 // Генерація токенів
 const generateTokens = (userId) => {
   const accessToken = jwt.sign({ userId }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
   const refreshToken = jwt.sign({ userId }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '30d' });
-  console.log("Generated Access Token:", accessToken);
-  console.log("Generated Refresh Token:", refreshToken);
 
   return { accessToken, refreshToken };
 };
@@ -22,6 +21,19 @@ const getTokenValidityDates = () => {
   const refreshTokenValidUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 днів
 
   return { accessTokenValidUntil, refreshTokenValidUntil };
+};
+
+// Функція для створення сесії
+const createSession = () => {
+  const accessToken = randomBytes(30).toString('base64');
+  const refreshToken = randomBytes(30).toString('base64');
+
+  return {
+    accessToken,
+    refreshToken,
+    accessTokenValidUntil: new Date(Date.now() + 15 * 60 * 1000), // 15 хв
+    refreshTokenValidUntil: new Date(Date.now() + 24 * 60 * 60 * 1000), // 1 день
+  };
 };
 
 // Видалення сесії за userId
@@ -91,6 +103,30 @@ export const refreshSession = async (refreshToken) => {
   await newSession.save();
 
   return { newAccessToken: accessToken, newRefreshToken };
+};
+
+// Функція для оновлення сесії за sessionId та refreshToken
+export const refreshUsersSession = async ({ sessionId, refreshToken }) => {
+  const session = await Session.findOne({ _id: sessionId, refreshToken });
+
+  if (!session) {
+    throw createHttpError(401, 'Session not found');
+  }
+
+  const isSessionTokenExpired = new Date() > new Date(session.refreshTokenValidUntil);
+
+  if (isSessionTokenExpired) {
+    throw createHttpError(401, 'Session token expired');
+  }
+
+  const newSession = createSession();
+
+  await Session.deleteOne({ _id: sessionId, refreshToken });
+
+  return await Session.create({
+    userId: session.userId,
+    ...newSession,
+  });
 };
 
 // Функція для видалення сесії (логаут користувача)
