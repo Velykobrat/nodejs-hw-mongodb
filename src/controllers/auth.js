@@ -1,17 +1,20 @@
 // src/controllers/auth.js
 
+// src/controllers/auth.js
+
 import createHttpError from 'http-errors';
 import { registerUser, loginUser, refreshSession, logoutUser, refreshUsersSession } from '../services/auth.js';
+import { ONE_DAY } from '../constants/index.js';
 
 // Функція для встановлення сесії в cookies
 const setupSession = (res, session) => {
   res.cookie('refreshToken', session.refreshToken, {
     httpOnly: true,
-    expires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 1 день
+    expires: new Date(Date.now() + ONE_DAY), // 1 день
   });
   res.cookie('sessionId', session._id, {
     httpOnly: true,
-    expires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 1 день
+    expires: new Date(Date.now() + ONE_DAY), // 1 день
   });
 };
 
@@ -49,18 +52,15 @@ export const login = async (req, res, next) => {
       throw createHttpError(400, 'All fields are required');
     }
 
-    const { accessToken, refreshToken } = await loginUser(email, password);
+    const session = await loginUser(email, password); // Змінив, щоб отримати всю сесію
 
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 днів
-    });
+    setupSession(res, session); // Використовуємо функцію для налаштування кукі
 
     res.status(200).json({
       status: 200,
       message: 'Successfully logged in a user!',
       data: {
-        accessToken,
+        accessToken: session.accessToken,
       },
     });
   } catch (error) {
@@ -72,6 +72,11 @@ export const login = async (req, res, next) => {
 export const refresh = async (req, res, next) => {
   try {
     const { refreshToken } = req.cookies;
+
+    if (!refreshToken) {
+      throw createHttpError(400, 'Refresh token is required');
+    }
+
     const { newAccessToken, newRefreshToken } = await refreshSession(refreshToken);
 
     res.cookie('refreshToken', newRefreshToken, {
@@ -102,6 +107,7 @@ export const logout = async (req, res, next) => {
 
     await logoutUser(refreshToken);
     res.clearCookie('refreshToken');
+    res.clearCookie('sessionId'); // Додаємо очистку кукі sessionId
 
     res.status(204).send();
   } catch (error) {
@@ -124,3 +130,4 @@ export const refreshUserSessionController = async (req, res, next) => {
     return next(err);
   }
 };
+

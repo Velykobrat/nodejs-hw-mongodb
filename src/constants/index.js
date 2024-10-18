@@ -1,3 +1,7 @@
+// src/constants/index.js
+
+export const ONE_DAY = 24 * 60 * 60 * 1000; // Кількість мілісекунд в одному дні
+
 export const ENV_VARS = {
     PORT: 'PORT',
 };
