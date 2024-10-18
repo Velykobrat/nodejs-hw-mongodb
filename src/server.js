@@ -1,55 +1,67 @@
-import express from 'express';
-import cors from 'cors';
-import pino from 'pino-http';
-import { env } from './utils/env.js';
-import contactsRouter from './routes/contacts.js';
+// src/server.js
 
+import express from 'express'; // Express — це фреймворк для створення веб-серверів.
+import cors from 'cors'; // CORS — модуль для налаштування політики доступу між джерелами.
+import pino from 'pino-http'; // Pino — це швидкий логер для Node.js.
+import { env } from './utils/env.js'; // Імпортуємо утиліту для доступу до змінних середовища.
+import contactsRouter from './routers/contacts.js'; // Імпортуємо роутер для контактів.
+import authRouter from './routers/auth.js'; // Імпортуємо роутер для автентифікації.
+import errorHandler from './middlewares/errorHandler.js'; // Імпортуємо обробник помилок.
+import notFoundHandler from './middlewares/notFoundHandler.js'; // Імпортуємо обробник неіснуючих маршрутів.
+import cookieParser from 'cookie-parser'; // Імпортуємо cookie-parser
+import axios from 'axios';
+import authenticate from './middlewares/authenticate.js';
+
+// Оголошуємо функцію для запуску сервера.
 export const startServer = () => {
+    // Створюємо новий екземпляр Express.
     const app = express();
-
-    // Використовуємо змінну оточення або 3000 за замовчуванням
+    // Задаємо порт для сервера, беручи його зі змінних середовища або за замовчуванням 3000.
     const PORT = Number(env('PORT', '3000'));
 
-    // Логер pino
+    // Налаштовуємо логер Pino для ведення логів HTTP-запитів.
     app.use(
         pino({
             transport: {
-                target: 'pino-pretty',
+                target: 'pino-pretty', // Формат виводу логів.
             },
         })
     );
 
-    // Використовуємо cors
+    // Додаємо middleware для обробки CORS (доступу між джерелами).
     app.use(cors());
+    // Додаємо middleware для парсингу JSON в запитах.
+    app.use(express.json());
+        // Додаємо middleware для обробки кукі
+    app.use(cookieParser());
 
-    app.use(express.json());  // Додаємо middleware для роботи з JSON
+    // Налаштовуємо маршрути:
+   app.use('/contacts', authenticate, contactsRouter); // Всі запити на '/contacts' обробляються contactsRouter.
+    app.use('/auth', authRouter); // Всі запити на '/auth' обробляються authRouter.
 
-    // Реєструємо маршрут для контактів
-    app.use('/contacts', contactsRouter);
-
-    // Основний роут
+    // Головний маршрут для кореневої сторінки.
     app.get('/', (req, res) => {
         res.json({
-            message: 'Hello world!',
+            message: 'Hello world!', // Відповідь на запит до кореневого маршруту.
         });
     });
 
-    // Обробка неіснуючих маршрутів
-    app.use('*', (req, res) => {
-        res.status(404).json({
-            message: 'Not found',
-        });
-    });
+    // Обробка неіснуючих маршрутів (404).
+    app.use(notFoundHandler);
 
-      app.use((err, req, res, next) => {
-    res.status(500).json({
-      message: 'Something went wrong',
-      error: err.message,
-    });
-  });
+    // Обробка помилок.
+    app.use(errorHandler);
 
-    // Запуск серверу
-    app.listen(PORT, () => {
-        console.log(`Server is running on port ${PORT}`);
+    // Запускаємо сервер на заданому порті.
+    app.listen(PORT, async () => {
+        console.log(`Server is running on port ${PORT}`); // Лог повідомлення про запуск сервера.
+
+        // Приклад запиту до /contacts
+        try {
+            const response = await axios.get(`http://localhost:${PORT}/contacts`);
+            console.log('Contacts data:', response.data);
+        } catch (error) {
+            console.error('Error fetching contacts:', error.message);
+        }
     });
 };
