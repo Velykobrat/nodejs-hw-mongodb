@@ -2,6 +2,9 @@
 
 import createError from 'http-errors';
 import contactsService from '../services/contacts.js';
+import { saveFileToCloudinary } from '../utils/saveFileToCloudinary.js';
+import { saveFileToUploadDir } from '../utils/saveFileToUploadDir.js';
+import { env } from '../utils/env.js';
 
 // Контролер для створення нового контакту
 export const createContact = async (req, res) => {
@@ -77,4 +80,36 @@ export const deleteContact = async (req, res, next) => {
         console.error('Помилка при видаленні контакту:', error);
         next(createError(500, 'Внутрішня помилка сервера'));
     }
+};
+
+
+export const patchStudentController = async (req, res, next) => {
+  const { studentId } = req.params;
+  const photo = req.file;
+
+  let photoUrl;
+
+  if (photo) {
+    if (env('ENABLE_CLOUDINARY') === 'true') {
+      photoUrl = await saveFileToCloudinary(photo);
+    } else {
+      photoUrl = await saveFileToUploadDir(photo);
+    }
+  }
+
+  const result = await updateStudent(studentId, {
+    ...req.body,
+    photo: photoUrl,
+  });
+
+  if (!result) {
+    next(createHttpError(404, 'Student not found'));
+    return;
+  }
+
+  res.json({
+    status: 200,
+    message: `Successfully patched a student!`,
+    data: result.student,
+  });
 };
