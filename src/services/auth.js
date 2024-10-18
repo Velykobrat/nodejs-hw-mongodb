@@ -56,6 +56,7 @@ export const registerUser = async (name, email, password) => {
 };
 
 // Функція для аутентифікації користувача
+// Функція для аутентифікації користувача
 export const loginUser = async (email, password) => {
   const user = await User.findOne({ email });
   if (!user || !(await bcrypt.compare(password, user.password))) {
@@ -66,11 +67,22 @@ export const loginUser = async (email, password) => {
   await deleteSessionByUserId(user._id);
 
   const { accessTokenValidUntil, refreshTokenValidUntil } = getTokenValidityDates();
-  const newSession = new SessionsCollection({ userId: user._id, accessToken, refreshToken, accessTokenValidUntil, refreshTokenValidUntil });
+  const newSession = new SessionsCollection({
+    userId: user._id,
+    accessToken,
+    refreshToken,
+    accessTokenValidUntil,
+    refreshTokenValidUntil,
+  });
   await newSession.save();
 
-  return { accessToken, refreshToken };
+  return {
+    accessToken,
+    refreshToken,
+    _id: newSession._id, // Додаємо sessionId
+  };
 };
+
 
 // Функція для оновлення сесії
 export const refreshSession = async (refreshToken) => {

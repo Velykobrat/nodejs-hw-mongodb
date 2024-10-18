@@ -1,7 +1,5 @@
 // src/controllers/auth.js
 
-// src/controllers/auth.js
-
 import createHttpError from 'http-errors';
 import { registerUser, loginUser, refreshSession, logoutUser, refreshUsersSession } from '../services/auth.js';
 import { ONE_DAY } from '../constants/index.js';
@@ -52,9 +50,9 @@ export const login = async (req, res, next) => {
       throw createHttpError(400, 'All fields are required');
     }
 
-    const session = await loginUser(email, password); // Змінив, щоб отримати всю сесію
+    const session = await loginUser(email, password); // Отримуємо всю сесію
 
-    setupSession(res, session); // Використовуємо функцію для налаштування кукі
+    setupSession(res, session); // Налаштовуємо куки
 
     res.status(200).json({
       status: 200,
@@ -107,7 +105,7 @@ export const logout = async (req, res, next) => {
 
     await logoutUser(refreshToken);
     res.clearCookie('refreshToken');
-    res.clearCookie('sessionId'); // Додаємо очистку кукі sessionId
+    res.clearCookie('sessionId'); // Очищуємо куки sessionId
 
     res.status(204).send();
   } catch (error) {
@@ -118,16 +116,22 @@ export const logout = async (req, res, next) => {
 // Контролер для обробки оновлення сесії за sessionId та refreshToken
 export const refreshUserSessionController = async (req, res, next) => {
   try {
+    const sessionId = req.cookies.sessionId;
+    const refreshToken = req.cookies.refreshToken;
+
+    if (!sessionId || !refreshToken) {
+      throw createHttpError(400, 'Session ID and refresh token are required');
+    }
+
     const session = await refreshUsersSession({
-      sessionId: req.cookies.sessionId,
-      refreshToken: req.cookies.refreshToken,
+      sessionId,
+      refreshToken,
     });
 
-    setupSession(res, session);
+    setupSession(res, session); // Налаштовуємо куки
 
     return res.status(200).json(session);
   } catch (err) {
     return next(err);
   }
 };
-
