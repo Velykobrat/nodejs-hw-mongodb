@@ -3,7 +3,7 @@
 import jwt from 'jsonwebtoken';
 import createHttpError from 'http-errors';
 import User from '../db/models/user.js';
-import Session from '../db/models/session.js';
+import { SessionsCollection } from '../db/models/session.js'; // Використовуйте SessionsCollection
 
 const authenticate = async (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -25,7 +25,7 @@ const authenticate = async (req, res, next) => {
 
   try {
     // Пошук сесії за accessToken
-    const session = await Session.findOne({ accessToken: token });
+    const session = await SessionsCollection.findOne({ accessToken: token }); // Використовуйте SessionsCollection
 
     // Якщо сесія не знайдена
     if (!session) {
@@ -34,7 +34,7 @@ const authenticate = async (req, res, next) => {
 
     // Перевірка терміну дії токена
     if (session.accessTokenValidUntil < Date.now()) {
-      await Session.findOneAndDelete({ accessToken: token }); // Видалення простроченої сесії
+      await SessionsCollection.findOneAndDelete({ accessToken: token }); // Видалення простроченої сесії
       return next(createHttpError(401, 'Access token expired'));
     }
 
@@ -54,7 +54,7 @@ const authenticate = async (req, res, next) => {
   } catch (err) {
     // Обробка помилок токена
     if (err.name === 'TokenExpiredError') {
-      await Session.findOneAndDelete({ accessToken: token }); // Видалення простроченої сесії
+      await SessionsCollection.findOneAndDelete({ accessToken: token }); // Видалення простроченої сесії
       return next(createHttpError(401, 'Access token expired'));
     } else if (err.name === 'JsonWebTokenError') {
       return next(createHttpError(401, 'Invalid token'));
