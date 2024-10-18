@@ -51,6 +51,12 @@ export const login = async (req, res, next) => {
     }
 
     const session = await loginUser(email, password);
+
+    // Перевірка, чи сесія містить потрібні дані
+    if (!session || !session.refreshToken || !session.accessToken || !session._id) {
+      throw createHttpError(401, 'Login failed: Session is incomplete');
+    }
+
     setupSession(res, session);
 
     res.status(200).json({
@@ -146,7 +152,12 @@ export const loginUserController = async (req, res, next) => {
 
     const session = await loginUser(email, password);
 
-    setupSession(res, session); 
+    // Перевірка, чи сесія містить потрібні дані
+    if (!session || !session.refreshToken || !session.accessToken || !session._id) {
+      throw createHttpError(401, 'Login failed: Session is incomplete');
+    }
+
+    setupSession(res, session);
 
     res.json({
       status: 200,
