@@ -1,7 +1,7 @@
 // src/controllers/auth.js
 
 import createHttpError from 'http-errors';
-import { registerUser, loginUser, refreshSession, logoutUser, refreshUsersSession } from '../services/auth.js';
+import { registerUser, loginUser, refreshSession, logoutUser, refreshUsersSession, requestResetToken } from '../services/auth.js';
 import { ONE_DAY } from '../constants/index.js';
 
 // Функція для встановлення сесії в cookies
@@ -169,4 +169,15 @@ export const loginUserController = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
+};
+
+
+// Контролер, який буде обробляти запит на зміну пароля
+export const requestResetEmailController = async (req, res) => {
+  await requestResetToken(req.body.email);
+  res.json({
+    message: 'Reset password email was successfully sent!',
+    status: 200,
+    data: {},
+  });
 };

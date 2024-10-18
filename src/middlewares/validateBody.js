@@ -2,6 +2,8 @@
 
 import createHttpError from 'http-errors';
 
+console.log('validateBody module loaded');
+
 export const validateBody = (schema) => {
     return (req, res, next) => {
         const { error } = schema.validate(req.body);

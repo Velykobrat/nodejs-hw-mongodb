@@ -6,6 +6,12 @@ import jwt from 'jsonwebtoken';
 import User from '../db/models/user.js';
 import { SessionsCollection } from '../db/models/session.js';
 import { randomBytes } from 'crypto';
+import { SMTP } from '../constants/index.js';
+import { env } from '../utils/env.js';
+import { sendEmail } from '../utils/sendMail.js';
+import handlebars from 'handlebars';
+import path from 'node:path';
+import fs from 'node:fs/promises';
 
 // Генерація токенів
 const generateTokens = (userId) => {
@@ -136,4 +142,30 @@ export const refreshUsersSession = async ({ sessionId, refreshToken }) => {
 // Функція для виходу користувача
 export const logoutUser = async (refreshToken) => {
   await SessionsCollection.deleteOne({ refreshToken });
+};
+
+
+// Функція для скидання пароля
+export const requestResetToken = async (email) => {
+  const user = await User.findOne({ email });
+  if (!user) {
+    throw createHttpError(404, 'User not found');
+  }
+  const resetToken = jwt.sign(
+    {
+      sub: user._id,
+      email,
+    },
+    env('JWT_SECRET'),
+    {
+      expiresIn: '15m',
+    },
+  );
+
+  await sendEmail({
+    from: env(SMTP.SMTP_FROM),
+    to: email,
+    subject: 'Reset your password',
+    html: `<p>Click <a href="${resetToken}">here</a> to reset your password!</p>`,
+  });
 };
