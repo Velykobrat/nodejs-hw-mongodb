@@ -4,97 +4,35 @@ import createError from 'http-errors';
 import contactsService from '../services/contacts.js';
 
 // Контролер для створення нового контакту
-export const createContact = async (req, res, next) => {
-    const { name, phoneNumber, email, isFavourite, contactType } = req.body;
-
-    console.log('Створення контакту з даними:', { name, phoneNumber, email, isFavourite, contactType });
-
-    if (!name || !phoneNumber || !contactType) {
-        return next(createError(400, 'Відсутні обов\'язкові поля: name, phoneNumber або contactType'));
-    }
-
+export const createContact = async (req, res) => {
     try {
-        const newContact = await contactsService.createContact({
-            name,
-            phoneNumber,
-            email,
-            isFavourite,
-            contactType,
-            userId: req.user._id, // Додаємо userId
-        });
-
-        console.log('Контакт успішно створено:', newContact);
-
-        res.status(201).json({
-            status: 201,
-            message: "Контакт успішно створено!",
-            data: newContact,
-        });
+        const newContact = await contactsService.createContact(req.body, req.user._id);
+        return res.status(201).json(newContact);
     } catch (error) {
-        console.error('Помилка при створенні контакту:', error);
-        next(createError(500, error.message));
+        return res.status(400).json({ message: error.message });
     }
 };
 
 // Контролер для отримання всіх контактів
-export const getContacts = async (req, res, next) => {
-    const { page = 1, perPage = 10, sortBy = 'name', sortOrder = 'asc', type, isFavourite } = req.query;
-
-    console.log('Отримання контактів з параметрами:', { page, perPage, sortBy, sortOrder, type, isFavourite });
-
-    const pageNumber = parseInt(page);
-    const itemsPerPage = parseInt(perPage);
-
-    if (!['name', 'phoneNumber', 'email'].includes(sortBy)) {
-        return next(createError(400, 'Невірний параметр sortBy'));
-    }
-    if (!['asc', 'desc'].includes(sortOrder)) {
-        return next(createError(400, 'Невірний параметр sortOrder'));
-    }
-
-    const filter = { userId: req.user._id };
-    if (type) filter.contactType = type;
-    if (isFavourite !== undefined) filter.isFavourite = isFavourite === 'true';
+export const getContacts = async (req, res) => {
+    const { page = 1, itemsPerPage = 10, sortBy = 'name', sortOrder = 'asc' } = req.query;
+    const userId = req.user._id;
 
     try {
-        const totalItems = await contactsService.countContacts(filter);
-        const totalPages = Math.ceil(totalItems / itemsPerPage);
-        const contacts = await contactsService.getContactsByPage(pageNumber, itemsPerPage, sortBy, sortOrder, filter);
-
-        console.log('Отримані контакти:', contacts);
-
-        res.status(200).json({
-            status: 200,
-            message: "Контакти успішно знайдені!",
-            data: {
-                data: contacts,
-                page: pageNumber,
-                perPage: itemsPerPage,
-                totalItems,
-                totalPages,
-                hasPreviousPage: pageNumber > 1,
-                hasNextPage: pageNumber < totalPages,
-            },
-        });
+        const contacts = await contactsService.getContactsByPage(page, itemsPerPage, sortBy, sortOrder, { userId });
+        const totalContacts = await contactsService.countContacts({ userId });
+        res.status(200).json({ contacts, totalContacts });
     } catch (error) {
-        console.error('Помилка при отриманні контактів:', error);
-        next(createError(500, error.message));
+        console.error('Error retrieving contacts:', error);
+        res.status(500).json({ message: error.message });
     }
 };
 
 // Контролер для отримання контакту за ID
 export const getContactById = async (req, res, next) => {
-    const { contactId } = req.params;
-
-    console.log('Отримання контакту за ID:', contactId);
-
     try {
-        const contact = await contactsService.getContactById(contactId, req.user._id); // Передаємо userId
-        if (!contact) {
-            return next(createError(404, 'Контакт не знайдено'));
-        }
-
-        console.log('Отриманий контакт:', contact);
+        const contact = await contactsService.getContactById(req.params.contactId, req.user._id);
+        if (!contact) return next(createError(404, 'Контакт не знайдено'));
 
         res.status(200).json({
             status: 200,
@@ -103,32 +41,15 @@ export const getContactById = async (req, res, next) => {
         });
     } catch (error) {
         console.error('Помилка при отриманні контакту за ID:', error);
-        next(createError(500, error.message));
+        next(createError(500, 'Внутрішня помилка сервера'));
     }
 };
 
 // Контролер для оновлення існуючого контакту
 export const updateContact = async (req, res, next) => {
-    const { contactId } = req.params;
-    const { name, phoneNumber, email, isFavourite, contactType } = req.body;
-
-    console.log('Оновлення контакту з ID:', contactId, 'та даними:', { name, phoneNumber, email, isFavourite, contactType });
-
     try {
-        const updatedContact = await contactsService.updateContact(contactId, {
-            name,
-            phoneNumber,
-            email,
-            isFavourite,
-            contactType,
-            userId: req.user._id, // Додаємо userId
-        });
-
-        if (!updatedContact) {
-            return next(createError(404, 'Контакт не знайдено'));
-        }
-
-        console.log('Контакт успішно оновлено:', updatedContact);
+        const updatedContact = await contactsService.updateContact(req.params.contactId, { ...req.body, userId: req.user._id });
+        if (!updatedContact) return next(createError(404, 'Контакт не знайдено'));
 
         res.status(200).json({
             status: 200,
@@ -137,30 +58,23 @@ export const updateContact = async (req, res, next) => {
         });
     } catch (error) {
         console.error("Помилка при оновленні контакту:", error);
-        if (error.name === 'CastError') {
-            return next(createError(400, 'Невірний ID контакту'));
-        }
-        next(createError(500, error.message));
+        next(createError(error.name === 'CastError' ? 400 : 500, error.name === 'CastError' ? 'Невірний ID контакту' : 'Внутрішня помилка сервера'));
     }
 };
 
 // Контролер для видалення контакту
 export const deleteContact = async (req, res, next) => {
-    const { contactId } = req.params;
-
-    console.log('Видалення контакту з ID:', contactId);
-
     try {
-        const deletedContact = await contactsService.deleteContact(contactId, req.user._id); // Передаємо userId
-        if (!deletedContact) {
-            return next(createError(404, 'Контакт не знайдено'));
-        }
+        const deletedContact = await contactsService.deleteContact(req.params.contactId, req.user._id);
+        if (!deletedContact) return next(createError(404, 'Контакт не знайдено'));
 
-        console.log('Контакт успішно видалено:', deletedContact);
-
-        res.status(204).send(); // Відповідь без тіла
+        res.status(200).json({
+            status: 200,
+            message: "Контакт успішно видалено!",
+            data: deletedContact,
+        });
     } catch (error) {
         console.error('Помилка при видаленні контакту:', error);
-        next(createError(500, error.message));
+        next(createError(500, 'Внутрішня помилка сервера'));
     }
 };

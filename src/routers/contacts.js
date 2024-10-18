@@ -29,3 +29,4 @@ contactsRouter.patch('/:contactId', isValidId, validateBody(updateContactSchema)
 contactsRouter.delete('/:contactId', isValidId, ctrlWrapper(deleteContact));
 
 export default contactsRouter;
+
