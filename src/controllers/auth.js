@@ -50,9 +50,8 @@ export const login = async (req, res, next) => {
       throw createHttpError(400, 'All fields are required');
     }
 
-    const session = await loginUser(email, password); // Отримуємо всю сесію
-
-    setupSession(res, session); // Налаштовуємо куки
+    const session = await loginUser(email, password);
+    setupSession(res, session);
 
     res.status(200).json({
       status: 200,
@@ -105,7 +104,7 @@ export const logout = async (req, res, next) => {
 
     await logoutUser(refreshToken);
     res.clearCookie('refreshToken');
-    res.clearCookie('sessionId'); // Очищуємо куки sessionId
+    res.clearCookie('sessionId');
 
     res.status(204).send();
   } catch (error) {
@@ -128,10 +127,35 @@ export const refreshUserSessionController = async (req, res, next) => {
       refreshToken,
     });
 
-    setupSession(res, session); // Налаштовуємо куки
+    setupSession(res, session);
 
     return res.status(200).json(session);
   } catch (err) {
     return next(err);
+  }
+};
+
+// Приклад контролера для логіна, що відповідає описаним вимогам
+export const loginUserController = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      throw createHttpError(400, 'All fields are required');
+    }
+
+    const session = await loginUser(email, password);
+
+    setupSession(res, session); 
+
+    res.json({
+      status: 200,
+      message: 'Successfully logged in a user!',
+      data: {
+        accessToken: session.accessToken,
+      },
+    });
+  } catch (error) {
+    next(error);
   }
 };

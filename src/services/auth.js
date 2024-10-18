@@ -56,7 +56,6 @@ export const registerUser = async (name, email, password) => {
 };
 
 // Функція для аутентифікації користувача
-// Функція для аутентифікації користувача
 export const loginUser = async (email, password) => {
   const user = await User.findOne({ email });
   if (!user || !(await bcrypt.compare(password, user.password))) {
