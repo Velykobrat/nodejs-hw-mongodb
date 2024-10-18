@@ -11,6 +11,7 @@ import notFoundHandler from './middlewares/notFoundHandler.js'; // Імпорт�
 import cookieParser from 'cookie-parser'; // Імпортуємо cookie-parser
 import axios from 'axios';
 import authenticate from './middlewares/authenticate.js';
+import { UPLOAD_DIR } from './constants/index.js';
 
 // Оголошуємо функцію для запуску сервера.
 export const startServer = () => {
@@ -23,26 +24,25 @@ export const startServer = () => {
     app.use(
         pino({
             transport: {
-                target: 'pino-pretty', // Формат виводу логів.
+                target: 'pino-pretty', 
             },
         })
     );
 
-    // Додаємо middleware для обробки CORS (доступу між джерелами).
     app.use(cors());
-    // Додаємо middleware для парсингу JSON в запитах.
     app.use(express.json());
-        // Додаємо middleware для обробки кукі
     app.use(cookieParser());
 
     // Налаштовуємо маршрути:
-   app.use('/contacts', authenticate, contactsRouter); // Всі запити на '/contacts' обробляються contactsRouter.
-    app.use('/auth', authRouter); // Всі запити на '/auth' обробляються authRouter.
+   app.use('/contacts', authenticate, contactsRouter);
+    app.use('/auth', authRouter);
+    app.use('/uploads', express.static(UPLOAD_DIR));
+
 
     // Головний маршрут для кореневої сторінки.
     app.get('/', (req, res) => {
         res.json({
-            message: 'Hello world!', // Відповідь на запит до кореневого маршруту.
+            message: 'Hello world!',
         });
     });
 
@@ -65,3 +65,4 @@ export const startServer = () => {
         }
     });
 };
+
