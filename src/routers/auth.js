@@ -5,16 +5,12 @@ import { register, login, refresh, logout } from '../controllers/auth.js';
 
 const router = express.Router();
 
-// Роут для реєстрації
-router.post('/register', register);
+router.post('/register', register); // Роут для реєстрації
 
-// Роут для логіну
-router.post('/login', login);
+router.post('/login', login); // Роут для логіну
 
-// Роут для оновлення сесії
-router.post('/refresh', refresh);
+router.post('/refresh', refresh); // Роут для оновлення сесії
 
-// Роут для логауту
-router.post('/logout', logout);
+router.post('/logout', logout); // Роут для логауту
 
 export default router;

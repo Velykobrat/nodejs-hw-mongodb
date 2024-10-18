@@ -10,6 +10,7 @@ import errorHandler from './middlewares/errorHandler.js'; // Імпортуєм�
 import notFoundHandler from './middlewares/notFoundHandler.js'; // Імпортуємо обробник неіснуючих маршрутів.
 import cookieParser from 'cookie-parser'; // Імпортуємо cookie-parser
 import axios from 'axios';
+import authenticate from './middlewares/authenticate.js';
 
 // Оголошуємо функцію для запуску сервера.
 export const startServer = () => {
@@ -35,7 +36,7 @@ export const startServer = () => {
     app.use(cookieParser());
 
     // Налаштовуємо маршрути:
-    app.use('/contacts', contactsRouter); // Всі запити на '/contacts' обробляються contactsRouter.
+   app.use('/contacts', authenticate, contactsRouter); // Всі запити на '/contacts' обробляються contactsRouter.
     app.use('/auth', authRouter); // Всі запити на '/auth' обробляються authRouter.
 
     // Головний маршрут для кореневої сторінки.

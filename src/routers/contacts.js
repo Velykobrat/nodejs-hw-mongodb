@@ -8,24 +8,24 @@ import { createContactSchema, updateContactSchema } from '../validation/contactS
 import ctrlWrapper from '../utils/ctrlWrapper.js';
 import authenticate from '../middlewares/authenticate.js';
 
-const router = express.Router();
+const contactsRouter = express.Router();
 
 // Застосування middleware authenticate до всіх роутів контактів
-router.use(authenticate);
+contactsRouter.use(authenticate);
 
 // Роут для отримання контактів
-router.get('/', ctrlWrapper(getContacts));
+contactsRouter.get('/', ctrlWrapper(getContacts));
 
 // Роут для отримання контакту за ID
-router.get('/:contactId', isValidId, ctrlWrapper(getContactById));
+contactsRouter.get('/:contactId', isValidId, ctrlWrapper(getContactById));
 
 // Роут для створення нового контакту
-router.post('/', validateBody(createContactSchema), ctrlWrapper(createContact));
+contactsRouter.post('/', validateBody(createContactSchema), ctrlWrapper(createContact));
 
 // Роут для оновлення існуючого контакту
-router.patch('/:contactId', isValidId, validateBody(updateContactSchema), ctrlWrapper(updateContact));
+contactsRouter.patch('/:contactId', isValidId, validateBody(updateContactSchema), ctrlWrapper(updateContact));
 
 // Роут для видалення існуючого контакту
-router.delete('/:contactId', isValidId, ctrlWrapper(deleteContact));
+contactsRouter.delete('/:contactId', isValidId, ctrlWrapper(deleteContact));
 
-export default router;
+export default contactsRouter;

@@ -3,50 +3,66 @@
 import jwt from 'jsonwebtoken';
 import createHttpError from 'http-errors';
 import User from '../db/models/user.js';
+import Session from '../db/models/session.js';
 
 const authenticate = async (req, res, next) => {
-   console.log("Request headers:", req.headers);
+  const authHeader = req.headers.authorization;
+
+  // Перевірка наявності заголовка Authorization
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return next(createHttpError(401, 'Authorization header missing or malformed'));
+  }
+
+  const token = authHeader.split(' ')[1];
+
+  // Перевірка наявності токена
+  if (!token) {
+    return next(createHttpError(401, 'Token missing in Authorization header'));
+  }
+
+  // Логування токена для сесійної перевірки
+  console.log('Received token for session check:', token);
+
   try {
-   const authHeader = req.headers['authorization'];
-   console.log("Authorization header:", authHeader);
+    // Пошук сесії за accessToken
+    const session = await Session.findOne({ accessToken: token });
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.log("Authorization header missing or malformed");
-      throw createHttpError(401, 'Authorization header missing or malformed');
+    // Якщо сесія не знайдена
+    if (!session) {
+      return next(createHttpError(401, 'Auth token is not associated with any session!'));
     }
 
-    const token = authHeader.split(' ')[1];
-
-    let decoded;
-
-    try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET);
-      console.log("Decoded token:", decoded);
-    } catch (err) {
-      console.log("Token verification error:", err);
-      if (err.name === 'TokenExpiredError') {
-        throw createHttpError(401, 'Access token expired');
-      } else if (err.name === 'JsonWebTokenError') {
-        throw createHttpError(401, 'Invalid token');
-      } else {
-        throw createHttpError(500, 'Token verification failed');
-      }
+    // Перевірка терміну дії токена
+    if (session.accessTokenValidUntil < Date.now()) {
+      await Session.findOneAndDelete({ accessToken: token }); // Видалення простроченої сесії
+      return next(createHttpError(401, 'Access token expired'));
     }
 
+    // Верифікація токена
+    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+
+    // Пошук користувача
     const user = await User.findById(decoded.userId);
     if (!user) {
-      console.log("User not found for token:", decoded.userId);
-      throw createHttpError(404, 'User not found');
+      return next(createHttpError(404, 'User not found'));
     }
 
+    // Додавання користувача до запиту для подальшої обробки
     req.user = user;
-    console.log("User authenticated:", user);
     next();
-  } catch (error) {
-    console.error("Authentication error:", error);
-    next(error);
+
+  } catch (err) {
+    // Обробка помилок токена
+    if (err.name === 'TokenExpiredError') {
+      await Session.findOneAndDelete({ accessToken: token }); // Видалення простроченої сесії
+      return next(createHttpError(401, 'Access token expired'));
+    } else if (err.name === 'JsonWebTokenError') {
+      return next(createHttpError(401, 'Invalid token'));
+    }
+
+    // Якщо виникає інша помилка
+    return next(createHttpError(500, 'Token verification failed'));
   }
 };
-
 
 export default authenticate;
