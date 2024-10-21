@@ -51,8 +51,16 @@ export const getContactById = async (req, res, next) => {
 // Контролер для оновлення існуючого контакту
 export const updateContact = async (req, res, next) => {
     try {
-        const updatedContact = await contactsService.updateContact(req.params.contactId, { ...req.body, userId: req.user._id });
-        if (!updatedContact) return next(createError(404, 'Контакт не знайдено'));
+        const userId = req.user._id; // Отримуємо ID користувача з токену або сесії
+        const contactId = req.params.contactId; // Отримуємо ID контакту з параметрів
+        const contactData = req.body; // Оновлені дані контакту
+
+        // Оновлюємо контакт, передаючи contactId, contactData та userId як окремі аргументи
+        const updatedContact = await contactsService.updateContact(contactId, contactData, userId);
+
+        if (!updatedContact) {
+            return next(createError(404, 'Контакт не знайдено'));
+        }
 
         res.status(200).json({
             status: 200,
@@ -61,7 +69,10 @@ export const updateContact = async (req, res, next) => {
         });
     } catch (error) {
         console.error("Помилка при оновленні контакту:", error);
-        next(createError(error.name === 'CastError' ? 400 : 500, error.name === 'CastError' ? 'Невірний ID контакту' : 'Внутрішня помилка сервера'));
+        next(createError(
+            error.name === 'CastError' ? 400 : 500,
+            error.name === 'CastError' ? 'Невірний ID контакту' : 'Внутрішня помилка сервера'
+        ));
     }
 };
 
