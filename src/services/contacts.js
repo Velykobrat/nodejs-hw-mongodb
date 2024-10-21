@@ -67,9 +67,10 @@ export const updateContact = async (contactId, contactData, userId) => {
     console.log('Updating contact with ID:', contactId, 'and data:', contactData);
 
     try {
+        // Пошук і оновлення контакту, що належить користувачу
         const updatedContact = await Contact.findOneAndUpdate(
-            { _id: contactId, userId }, // Фільтрація за contactId та userId
-            contactData,
+            { _id: contactId, userId }, // Перевіряється і ID контакту, і ID користувача
+            contactData, // Передаємо лише оновлені дані
             { new: true, runValidators: true }
         );
 
