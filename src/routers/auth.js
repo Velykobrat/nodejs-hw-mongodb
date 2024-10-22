@@ -20,7 +20,7 @@ router.post('/logout', logout); // Роут для логауту
 
 // Pоут для скидання паролю через емейл
 router.post(
-  '/request-reset-email',
+  '/send-reset-email',
   validateBody(requestResetEmailSchema),
   ctrlWrapper(requestResetEmailController),
 );
