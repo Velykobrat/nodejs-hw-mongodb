@@ -7,13 +7,17 @@
   "scripts": {
     "lint": "eslint src/**/*.js",
     "dev": "nodemon src/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "npm run build-docs",
+    "build-docs": "redocly bundle --ext json -o docs/swagger.json",
+    "preview-docs": "redocly preview-docs"
   },
   "keywords": [],
   "author": "Vitalii Velykobrat <bigbrother344@gmail.com>",
   "license": "ISC",
   "devDependencies": {
     "@eslint/js": "^9.10.0",
+    "@redocly/cli": "^1.25.8",
     "eslint": "^9.10.0",
     "globals": "^15.9.0",
     "nodemon": "^3.1.6",
