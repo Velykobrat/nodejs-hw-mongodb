@@ -71,7 +71,7 @@ export const updateContact = async (contactId, contactData, userId) => {
         const updatedContact = await Contact.findOneAndUpdate(
             { _id: contactId, userId }, // Перевіряється і ID контакту, і ID користувача
             contactData, // Передаємо лише оновлені дані
-            { new: true, runValidators: true }
+            { new: true, runValidators: true } // Повертаємо оновлений об'єкт
         );
 
         if (!updatedContact) {

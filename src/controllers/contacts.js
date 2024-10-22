@@ -54,9 +54,25 @@ export const updateContact = async (req, res, next) => {
         const userId = req.user._id; // Отримуємо ID користувача з токену або сесії
         const contactId = req.params.contactId; // Отримуємо ID контакту з параметрів
         const contactData = req.body; // Оновлені дані контакту
+        const photo = req.file; // Отримуємо файл із запиту
+
+        let photoUrl;
+        if (photo) {
+            if (env('ENABLE_CLOUDINARY') === 'true') {
+                photoUrl = await saveFileToCloudinary(photo); // Зберігаємо на Cloudinary
+            } else {
+                photoUrl = await saveFileToUploadDir(photo); // Локальне збереження
+            }
+        }
+
+        // Додаємо посилання на фото до даних контакту, якщо файл був завантажений
+        const updatedContactData = {
+            ...contactData,
+            ...(photoUrl && { photo: photoUrl }), // Додаємо поле photo тільки якщо воно існує
+        };
 
         // Оновлюємо контакт, передаючи contactId, contactData та userId як окремі аргументи
-        const updatedContact = await contactsService.updateContact(contactId, contactData, userId);
+        const updatedContact = await contactsService.updateContact(contactId, updatedContactData, userId);
 
         if (!updatedContact) {
             return next(createError(404, 'Контакт не знайдено'));
