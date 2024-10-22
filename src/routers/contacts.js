@@ -21,7 +21,7 @@ contactsRouter.get('/', ctrlWrapper(getContacts));
 contactsRouter.get('/:contactId', isValidId, ctrlWrapper(getContactById));
 
 // Роут для створення нового контакту
-contactsRouter.post('/', isValidId, upload.single('photo'), validateBody(createContactSchema), ctrlWrapper(createContact));
+contactsRouter.post('/', upload.single('photo'), validateBody(createContactSchema), ctrlWrapper(createContact));
 
 // Роут для оновлення існуючого контакту
 contactsRouter.patch('/:contactId', isValidId, upload.single('photo'), validateBody(updateContactSchema), ctrlWrapper(updateContact));
