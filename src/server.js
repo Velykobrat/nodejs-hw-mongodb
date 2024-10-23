@@ -12,6 +12,7 @@ import cookieParser from 'cookie-parser'; // Імпортуємо cookie-parser
 import axios from 'axios';
 import authenticate from './middlewares/authenticate.js';
 import { UPLOAD_DIR } from './constants/index.js';
+import { swaggerDocs } from './middlewares/swaggerDocs.js';
 
 // Оголошуємо функцію для запуску сервера.
 export const startServer = () => {
@@ -24,7 +25,7 @@ export const startServer = () => {
     app.use(
         pino({
             transport: {
-                target: 'pino-pretty', 
+                target: 'pino-pretty',
             },
         })
     );
@@ -34,9 +35,10 @@ export const startServer = () => {
     app.use(cookieParser());
 
     // Налаштовуємо маршрути:
-   app.use('/contacts', authenticate, contactsRouter);
+    app.use('/contacts', authenticate, contactsRouter);
     app.use('/auth', authRouter);
     app.use('/uploads', express.static(UPLOAD_DIR));
+    app.use('/api-docs', swaggerDocs());
 
 
     // Головний маршрут для кореневої сторінки.
